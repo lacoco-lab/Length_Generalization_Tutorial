@@ -8,7 +8,7 @@ const examples = {
 let trace, selected = 0, worker, timer, running = false, lastRequest;
 function status(message, error = false) { $('engine-status').textContent = message; $('engine-status').classList.toggle('error', error); }
 function stop() { worker?.terminate(); worker = undefined; clearTimeout(timer); running = false; $('run').disabled = false; $('stop').hidden = true; }
-function markStale() { $('download-trace').disabled = true; $('result').textContent = 'Edits not evaluated'; status('The table shows the previous run. Run the interpreter to evaluate your edits.'); }
+function markStale() { $('download-trace').disabled = true; $('result').textContent = 'Edits not evaluated'; $('result').className = 'result'; $('acceptance-note').textContent = 'The trace below belongs to the previous input and program. Choose Run program to replace it.'; status('The table shows the previous run. Run the interpreter to evaluate your edits.'); }
 function renderTrace(data) {
   trace = data; selected = Math.min(selected, data.rows.length - 1);
   const table = $('trace'); table.replaceChildren();
@@ -32,9 +32,33 @@ function renderTrace(data) {
   });
   selectRow(selected);
   $('result').textContent = data.accepted ? 'Accepted' : 'Rejected'; $('result').className = `result ${data.accepted ? 'accepted' : 'rejected'}`;
-  $('download-trace').disabled = false;
+  $('download-trace').disabled = false; $('acceptance-note').textContent = `The final assignment is ${data.rows.at(-1).name}. Its value at the last token is ${data.accepted ? 'true (✓), so this input is accepted.' : 'false (·), so this input is rejected.'}`;
 }
-function selectRow(i) { if (!trace) return; selected = Math.max(0,Math.min(i,trace.rows.length-1)); $('trace').querySelectorAll('[data-row]').forEach(tr=>tr.classList.toggle('selected',+tr.dataset.row===selected)); $('row-label').textContent = `${selected+1} / ${trace.rows.length} · ${trace.rows[selected].name}`; $('prev-row').disabled = selected===0; $('next-row').disabled=selected===trace.rows.length-1; }
+function selectRow(i) { if (!trace) return; selected = Math.max(0,Math.min(i,trace.rows.length-1)); $('trace').querySelectorAll('[data-row]').forEach(tr=>tr.classList.toggle('selected',+tr.dataset.row===selected)); $('row-label').textContent = `${selected+1} / ${trace.rows.length} · ${trace.rows[selected].name}`; explainRow(); $('prev-row').disabled = selected===0; $('next-row').disabled=selected===trace.rows.length-1; }
+
+const rowDescriptions = {
+ C_open: 'Count opening parentheses from the start through each column, including the current token.',
+ C_close: 'Count closing parentheses in the same inclusive prefix.',
+ V: 'Mark a violation wherever the number of closes exceeds the number of opens. Equal final totals do not rule out an earlier violation.',
+ CV: 'Count how many prefix violations have occurred so far. Once this is positive, an earlier invalid prefix remains recorded.',
+ M: 'True if no invalid prefix has occurred up to this position: CV equals zero.',
+ B: 'True where the opening and closing counts agree. This checks balance, but does not alone check earlier prefixes.',
+ D: 'Combine M and B: no prefix violation and equal counts. The last cell decides acceptance for the whole input.'
+};
+function explainRow(){
+ const row=trace.rows[selected];
+ $('row-explanation').textContent = lastRequest?.source===examples.dyck.source ? rowDescriptions[row.name] : `${row.name}: values produced by this assignment at each token position. Compare this row with the assignment in the program above.`;
+}
+function updateGuide(){
+ const k=$('example').value;
+ $('try-valid').hidden=$('try-invalid').hidden=k!=='dyck';
+ $('example-guide').textContent=k==='dyck'?'Compare two inputs: both have three opens and three closes, but only one has valid prefixes. Load an input, then choose Run program.':k==='anbn'?'This program accepts one or more a tokens followed by the same number of b tokens. Run “a a a b b b”, then try “a b a b”: equal totals alone do not ensure the correct order.':'This program checks whether an a is immediately followed by b anywhere in the input. Run “b a b a”, then try “b a a”: the second input has both symbols but no adjacent ab.';
+}
+$('try-valid').onclick=()=>{$('tokens').value='()(())';markStale();};
+$('try-invalid').onclick=()=>{$('tokens').value='())(()';markStale();};
+$('try-invalid').textContent='Load invalid input: ())(()';
+updateGuide();
+
 $('prev-row').onclick=()=>selectRow(selected-1); $('next-row').onclick=()=>selectRow(selected+1);
 $('run').onclick=()=>{
   if (running) return;
@@ -54,15 +78,22 @@ $('run').onclick=()=>{
 };
 $('stop').onclick=()=>{stop();status('Execution stopped.');};
 $('program').oninput=markStale; $('tokens').oninput=markStale;
-function reset(){stop();const e=examples[$('example').value];$('tokens').value=e.tokens;$('program').value=e.source;markStale();}
+function reset(){stop();const e=examples[$('example').value];$('tokens').value=e.tokens;$('program').value=e.source;updateGuide();markStale();}
 $('example').onchange=reset; $('reset').onclick=reset;
 function download(name, data){const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)+'\n'],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 $('download-trace').onclick=()=>download('crasp-trace.json',{...trace,program:lastRequest.source,interpreter_commit:'1e821d7279015ce0e77830faa7932575447c5164'});
 $('share').onclick=async()=>{const url=new URL(location.href);url.hash='program='+encodeURIComponent(JSON.stringify({source:$('program').value,tokens:$('tokens').value}));try{await navigator.clipboard.writeText(url.href);status('Program link copied. Shared links do not execute automatically.');}catch{history.replaceState(null,'',url);status('Program saved in the address bar. Copy the URL to share it.');}};
 function tokenElement(label, cls=''){const el=document.createElement('span');el.className=`token ${cls}`;el.textContent=label;return el;}
-function attention(){const n=+$('prefix').value,tokens=['(',')','(','(',')',')'];$('prefix-label').textContent=n;const strip=$('attention-tokens');strip.replaceChildren(tokenElement('BOS','visible'));tokens.forEach((t,i)=>strip.append(tokenElement(t,i<n?'visible':'')));const count=tokens.slice(0,n).filter(t=>t==='(').length;$('attention-equation').textContent=`Opening count: ${count}/${n+1}     ·     Encoded 1: 1/${n+1}`;}
+function attention(){
+ const n=+$('prefix').value,tokens=['(',')','(','(',')',')'];$('prefix-label').textContent=n;
+ const strip=$('attention-tokens');strip.replaceChildren();
+ ['BOS',...tokens].forEach((t,k)=>{const visible=k<=n;const el=tokenElement(t,visible?'visible':'masked');const note=document.createElement('small');note.textContent=visible?`value ${t==='('?1:0} · weight 1/${n+1}`:'masked · weight 0';el.append(note);strip.append(el);});
+ const count=tokens.slice(0,n).filter(t=>t==='(').length;
+ $('attention-equation').textContent=`${count} opening tokens × 1/${n+1} = ${count}/${n+1}`;
+ $('attention-explanation').textContent=`There are ${n+1} visible positions: BOS and ${n} ordinary tokens. ${count} opening parentheses contribute 1 each; all other values are 0. Their average is ${(count/(n+1)).toFixed(3)}. A separate BOS-only indicator contributes once, giving 1/${n+1} as the encoded constant 1.`;
+}
 $('prefix').oninput=attention;attention();
-function positions(){const i=+$('query').value,kind=$('relation').value;$('query-label').textContent=i;const strip=$('position-tokens');strip.replaceChildren();for(let j=0;j<12;j++){const match=j<=i&&(kind==='previous'?j===i-1:kind==='even'?(i-j)%2===0:j===0);strip.append(tokenElement(`${j}${j===i?' ↓':''}`,match?'match':''));}$('relation-description').textContent=kind==='previous'?'j = i − 1: local (distance 1) and translation-invariant. At query 0 there is no preceding token.':kind==='even'?'i − j is even: translation-invariant, but not local—matching keys can be arbitrarily far away. This is a binary relation, unlike the periodic unary predicate “position is even”.':'j = 0: selects the start of the sequence. Shifting both positions changes the relation; it is not translation-invariant. Only keys in the causal prefix are shown as selected.';}
+function positions(){const i=+$('query').value,kind=$('relation').value;$('query-label').textContent=i;const strip=$('position-tokens');strip.replaceChildren();for(let j=0;j<12;j++){const match=j<=i&&(kind==='previous'?j===i-1:kind==='even'?(i-j)%2===0:j===0);const el=tokenElement(j,match?'match':j>i?'masked':'');const label=document.createElement('small');label.textContent=[j===i?'query':'',j>i?'masked':match?'selected':'not selected'].filter(Boolean).join(' · ');el.append(label);strip.append(el);}const keys=Array.from({length:i+1},(_,j)=>j).filter(j=>kind==='previous'?j===i-1:kind==='even'?(i-j)%2===0:j===0); $('position-selection').textContent=`Query i = ${i}. Selected keys: ${keys.length?keys.join(', '):'none'}. ${kind==='previous'?'Move the query one position to the right: the selected predecessor moves with it.':kind==='even'?'Moving the query changes which parity of key positions is selected.':'Moving the query leaves key 0 selected; the relation stays tied to the sequence start.'}`; $('relation-description').textContent=kind==='previous'?'j = i − 1: local (distance 1) and translation-invariant. At query 0 there is no preceding token.':kind==='even'?'i − j is even: translation-invariant, but not local—matching keys can be arbitrarily far away. This is a binary relation, unlike the periodic unary predicate “position is even”.':'j = 0: selects the start of the sequence. Shifting both positions changes the relation; it is not translation-invariant. Only keys in the causal prefix are shown as selected.';}
 $('query').oninput=positions;$('relation').onchange=positions;positions();
 const figureLabels={main:'Figure 1: main comparison across tasks and formal languages.',languages:'Figure 2: named formal languages and their generalization results.'};
 document.querySelectorAll('[data-figure]').forEach(b=>b.onclick=()=>{const k=b.dataset.figure;$('paper-figure').src=`assets/paper-${k}.svg`;$('figure-link').href=`assets/paper-${k}.svg`;$('paper-figure').alt=`Huang et al. (2025), ${figureLabels[k]} See the original paper for the full caption.`;$('paper-caption').textContent=`Huang et al. (2025), ${figureLabels[k]} Published experiment results; not new runs. Open the image for full detail.`;document.querySelectorAll('[data-figure]').forEach(x=>x.classList.toggle('secondary',x!==b));});

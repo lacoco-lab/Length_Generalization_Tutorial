@@ -1,4 +1,4 @@
-# How transformers count
+# C-RASP and transformer length generalization
 
 An editable, interactive companion to the C-RASP tutorial. Open `site/index.html` through a local web server; all deployable files are in `site/`.
 
@@ -10,7 +10,7 @@ python3 -m http.server 8000 --directory site
 
 Visit http://localhost:8000. Edit article prose in `site/index.html`, styling in `site/assets/style.css`, and interactions in `site/assets/app.js`. This first edition uses semantic HTML, CSS and JavaScript with no build step or Node dependencies. It can live in a GitHub Pages project subdirectory or on the chair's web server. The paper's Typst source remains separate; this is an editorial adaptation, not an automatically synchronized export.
 
-The page has expandable formal details, anchored sections, keyboard-accessible trace inspection, editable examples, program-sharing URLs, trace downloads, attention and positional-relation illustrations, published figures, and a saved-evaluation gallery. It is responsive and has a print stylesheet.
+The page has visible formal explanations, anchored sections, keyboard-accessible trace inspection, editable examples, program-sharing URLs, trace downloads, attention and positional-relation illustrations, published figures, and a saved-evaluation gallery. It is responsive and has a print stylesheet.
 
 ## The existing Python implementation
 

@@ -8,7 +8,7 @@ An editable, interactive companion to the C-RASP tutorial. Open `site/index.html
 python3 -m http.server 8000 --directory site
 ```
 
-Visit http://localhost:8000. Edit article prose in `site/index.html`, styling in `site/assets/style.css`, and article interactions in `site/assets/article.js`. This first edition uses semantic HTML, CSS and JavaScript with no build step or Node dependencies. It can live in a GitHub Pages project subdirectory or on the chair's web server. The paper's Typst source remains separate; this is an editorial adaptation, not an automatically synchronized export.
+Visit http://localhost:8000 for the main tutorial, or http://localhost:8000/version2/ for the separately developed experimental version. Run the server from the repository root. `npm run preview` starts the same server. Edit article prose in `site/index.html`, styling in `site/assets/style.css`, and article interactions in `site/assets/article.js`. This first edition uses semantic HTML, CSS and JavaScript with no build step or Node dependencies. It can live in a GitHub Pages project subdirectory or on the chair's web server. The paper's Typst source remains separate; this is an editorial adaptation, not an automatically synchronized export.
 
 The page has visible formal explanations, anchored sections, keyboard-accessible trace inspection, editable examples, program-sharing URLs, trace downloads, attention and positional-relation illustrations, published figures, and a saved-evaluation gallery. It is responsive and has a print stylesheet.
 
@@ -92,3 +92,7 @@ Source layout:
 ```
 
 This checks 443 traces, including deterministic random programs and every nonempty parenthesis input through length 7. It does not prove correctness of arbitrary programs.
+
+## Version 2 (separate remote contribution)
+
+The GitHub update adds `site/version2/`, with a chapter-based tutorial and drag-and-drop program editor. It remains self-contained and is linked from the main page header and footer. It does not replace the integrated main draft. See `site/version2/README.md` for its instructions.

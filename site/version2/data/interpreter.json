@@ -1,0 +1,9 @@
+{
+  "repository": "https://github.com/coli-saar/c-rasp",
+  "branch": "c-star-rasp",
+  "commit": "1e821d7279015ce0e77830faa7932575447c5164",
+  "raw_base": "https://raw.githubusercontent.com/coli-saar/c-rasp",
+  "files": ["program.py", "parser.py", "predefined.py", "tracing.py", "antlr/craspLexer.py", "antlr/craspParser.py", "antlr/craspVisitor.py"],
+  "antlr_version": "4.13.1",
+  "pyodide_version": "0.27.7"
+}

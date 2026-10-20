@@ -4,11 +4,30 @@ An editable, interactive companion to the C-RASP tutorial. Open `site/index.html
 
 ## Preview and edit
 
+From the repository root:
+
 ```sh
 python3 -m http.server 8000 --directory site
 ```
 
-Visit http://localhost:8000. Edit article prose in `site/index.html`, styling in `site/assets/style.css`, and interactions in `site/assets/app.js`. This first edition uses semantic HTML, CSS and JavaScript with no build step or Node dependencies. It can live in a GitHub Pages project subdirectory or on the chair's web server. The paper's Typst source remains separate; this is an editorial adaptation, not an automatically synchronized export.
+Then open:
+
+| Edition | URL |
+|--------|-----|
+| **Main tutorial** (original) | http://localhost:8000/ |
+| **Version 2** (experimental) | http://localhost:8000/version2/ |
+
+Or use the npm script: `npm run preview` (same server).
+
+Edit the main tutorial in `site/index.html`, `site/assets/style.css`, and `site/assets/app.js`. This first edition uses semantic HTML, CSS and JavaScript with no build step or Node dependencies. It can live in a GitHub Pages project subdirectory or on the chair's web server. The paper's Typst source remains separate; this is an editorial adaptation, not an automatically synchronized export.
+
+### Version 2 (experimental, separate)
+
+A second edition lives in **`site/version2/`**. It has a leaner chapter structure and drag-and-drop C-RASP program editing. It does **not** replace the main tutorial.
+
+- Start the server as above, then visit http://localhost:8000/version2/
+- From the main page: use the **Version 2** link in the header/footer
+- Files are self-contained under `site/version2/` (`index.html`, `assets/`, `runtime/`, `data/interpreter.json`), so edits there cannot overwrite the main `site/` tutorial
 
 The page has visible formal explanations, anchored sections, keyboard-accessible trace inspection, editable examples, program-sharing URLs, trace downloads, attention and positional-relation illustrations, published figures, and a saved-evaluation gallery. It is responsive and has a print stylesheet.
 

@@ -102,8 +102,8 @@ The GitHub update adds `site/version2/`, with a chapter-based tutorial and drag-
 
 The alternative authoring setup is in [`tutorial_dual/`](tutorial_dual/README.md).
 Edit [`tutorial_dual/manuscript.typ`](tutorial_dual/manuscript.typ) for the shared
-article text; [`draft_2.typ`](draft_2.typ) is the PDF entry point. The original
-[`draft_1.typ`](draft_1.typ) is retained as an independent snapshot.
+article text. Both exports include this single source; [`draft_2.typ`](draft_2.typ)
+contains only the PDF layout settings.
 
 With Typst 0.15.1 and Tola 0.8.1 on PATH:
 

@@ -1,10 +1,14 @@
 # One tutorial, two export modes
 
-The new version preserves the current content of `../draft_1.typ`, including its
-unfinished outline sections. The original draft is unchanged. This is an independent
-snapshot; subsequent edits to `draft_1.typ` are not synchronized automatically.
+**`manuscript.typ` is the only article source. Edit that file for both exports.**
+There are no separate PDF and HTML copies of the prose. The small entry-point
+files supply layout or metadata and include the same manuscript:
 
-**Edit `manuscript.typ` for the article text.** Both outputs include that file.
+```text
+manuscript.typ
+  ├── ../draft_2.typ       → PDF layout → draft_2.pdf
+  └── content/index.typ   → Tola HTML layout → public/index.html
+```
 
 - `../draft_2.typ`: PDF entry point, numbered headings, contents, page numbers,
   and every detailed explanation fully visible.
@@ -15,7 +19,7 @@ snapshot; subsequent edits to `draft_1.typ` are not synchronized automatically.
 - `components.typ`: the `details[Title][Content]` helper and the interaction slot.
   To add another optional explanation, wrap an existing passage with that helper.
 
-From the parent Tutorial directory:
+From the repository root:
 
 ```sh
 ./build_tutorial.sh pdf       # writes draft_2.pdf
@@ -75,7 +79,7 @@ Existing upstream tests cover typing/dependencies and inclusive prefix evaluatio
 node --test tutorial_dual/tests/*.test.mjs
 ```
 
-The initial snapshot has since been edited: the examples progress from block order
+The examples have been organized: the examples progress from block order
 to equal blocks and balanced prefixes; compilation details are split into four folds;
 and the length-generalization section separates the setup, learner, theorem, and
-consequences. The original draft remains independent.
+consequences.

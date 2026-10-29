@@ -9,5 +9,4 @@ playwright-report/
 # Typst/Tola local tools and generated exports
 .tools/
 tmp/
-/draft_1.pdf
 /draft_2.pdf

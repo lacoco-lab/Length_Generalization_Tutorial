@@ -1,0 +1,24 @@
+[
+  {
+    "file": "assets/paper-main.svg",
+    "source_url": "https://arxiv.org/html/2410.02140v2/results_for_main_paper.svg",
+    "paper": "https://arxiv.org/html/2410.02140v2#S5.F1",
+    "authors": "Huang et al.",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "modifications": "none",
+    "sha256": "8031bb180f9d1d7d3d3c8533174d2903e06a4cf9eb2a7f54c046849ea09c753f",
+    "retrieved_at": "2026-10-19T12:48:34.219715+00:00"
+  },
+  {
+    "file": "assets/paper-languages.svg",
+    "source_url": "https://arxiv.org/html/2410.02140v2/formal_only.svg",
+    "paper": "https://arxiv.org/html/2410.02140v2#A5.F2",
+    "authors": "Huang et al.",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "modifications": "none",
+    "sha256": "d5d4dfe9fd3551b7bb75f61d62d4cf7c610382830f80eb004e84eef144a1992a",
+    "retrieved_at": "2026-10-19T12:48:34.323792+00:00"
+  }
+]

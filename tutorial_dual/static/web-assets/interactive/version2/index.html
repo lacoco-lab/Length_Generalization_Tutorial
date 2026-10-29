@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Version 2 (experimental) of the C-RASP length-generalization tutorial.">
+  <title>C-RASP · Version 2 · Length generalization</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <script type="module" src="assets/app.js"></script>
+</head>
+<body>
+<a class="skip" href="#article">Skip to article</a>
+<header>
+  <a class="brand" href="./">C-RASP / VERSION 2</a>
+  <nav aria-label="Primary">
+    <a href="../">← Main tutorial</a>
+    <a href="#walkthrough" data-open-section="walkthrough">What is C-RASP</a>
+    <a href="#playground" data-open-section="playground">Try a program</a>
+    <a href="#related" data-open-section="related">Related work</a>
+  </nav>
+</header>
+<main>
+  <div class="hero hero-solo">
+    <div class="eyebrow">Version 2 · Experimental · Separate from main tutorial</div>
+    <h1>C-RASP and length generalization</h1>
+    <p class="dek">An interactive introduction to length generalization and C-RASP: length-independent programs that transformers can implement, and why that is not the same as learning to generalize.</p>
+    <p class="meta">Version 2 — drag-and-drop program editing · Does not replace the <a href="../">main tutorial</a></p>
+  </div>
+
+  <div class="layout">
+    <aside class="toc" aria-label="On this page">
+      <strong>In this tutorial</strong>
+      <a href="#question" data-open-section="question">01 / The question</a>
+      <a href="#walkthrough" data-open-section="walkthrough">02 / What is C-RASP</a>
+      <a href="#playground" data-open-section="playground">03 / Try it yourself</a>
+      <a href="#related" data-open-section="related">04 / Related work</a>
+    </aside>
+
+    <article id="article">
+      <noscript><p class="noscript">JavaScript is off: all sections stay expanded below. Enable it for step-by-step navigation and the interpreter.</p></noscript>
+
+      <details id="question" class="chapter" open>
+        <summary class="chapter-summary">
+          <span class="section-number">01 / The question</span>
+          <span class="chapter-title">Length generalization and C-RASP</span>
+          <span class="chapter-marker" aria-hidden="true"></span>
+        </summary>
+        <div class="chapter-body">
+          <p class="lede">A model can look accurate on short strings and fail when inputs get longer. <strong>Length generalization</strong> means: fit on lengths up to <em>N</em>, then stay correct on lengths beyond <em>N</em>.</p>
+          <p>A <strong>C-RASP program</strong> is a fixed list of assignments. Each assignment builds a <em>vector with one entry per input position</em>—either a yes/no (Boolean) or an integer (count). The number of lines does not depend on the input length: longer inputs only make those vectors longer. <a href="https://arxiv.org/abs/2404.04393">Yang and Chiang (2024)</a> show such programs can be implemented by transformers; that is about what can be represented, not what training will find.</p>
+          <p>Keep three questions separate: <em>representability</em>, <em>learning</em>, and <em>length generalization</em>. Writing a C-RASP program answers only the first.</p>
+          <div class="chapter-nav">
+            <button type="button" class="next-chapter" data-next="walkthrough">Next: What is C-RASP →</button>
+          </div>
+        </div>
+      </details>
+
+      <details id="walkthrough" class="chapter">
+        <summary class="chapter-summary">
+          <span class="section-number">02 / What is C-RASP</span>
+          <span class="chapter-title">Programs, commands, and what “in C-RASP” means</span>
+          <span class="chapter-marker" aria-hidden="true"></span>
+        </summary>
+        <div class="chapter-body">
+          <p class="lede">C-RASP is a tiny programming language. A program is a <strong>fixed</strong> list of assignments. Each assignment builds a vector with one value per input position—either a yes/no (Boolean) or an integer (count). Longer inputs make those vectors longer; they do not add new lines to the program.</p>
+
+          <h3>What “in C-RASP” means</h3>
+          <p>Saying a task is <em>in C-RASP</em> (or C-RASP-expressible) means: there exists a C-RASP program that solves it, using only the commands below. That is a statement about <strong>representability</strong>—a transformer can implement that program. It is <em>not</em> a claim that training will find the program, or that a trained model will length-generalize.</p>
+
+          <h3>The commands</h3>
+          <p>Every line of a program is one of these operations (Yang &amp; Chiang). In the tool, an input marker looks like <code>"("</code>; a prefix count looks like <code># "("</code>.</p>
+          <div class="ops-grid" role="group" aria-label="Allowed C-RASP operations">
+            <div>
+              <h4>Boolean vectors</h4>
+              <ul class="ops-list">
+                <li><strong>Input marker</strong> — is this position token <em>a</em>?</li>
+                <li><strong>Negation</strong> — not</li>
+                <li><strong>Conjunction</strong> — and</li>
+                <li><strong>Count comparison</strong> — e.g. ≤ between two counts</li>
+                <li><strong>Constant</strong> — always true</li>
+              </ul>
+            </div>
+            <div>
+              <h4>Count vectors</h4>
+              <ul class="ops-list">
+                <li><strong>Prefix count</strong> — <code>#</code> how often a Boolean holds so far</li>
+                <li><strong>Conditional</strong> — if–then–else on counts</li>
+                <li><strong>Add / subtract</strong></li>
+                <li><strong>Min / max</strong></li>
+                <li><strong>Constant</strong> — the integer 1</li>
+              </ul>
+            </div>
+          </div>
+          <p class="small">Shorthand such as <code>==</code>, <code>&lt;</code>, and <code>0</code> is derived from these primitives (e.g. equality via two ≤ checks).</p>
+
+          <h3>How a program decides</h3>
+          <p>Assignments run in order. Each line may use earlier vectors. For recognition, the program ends with a Boolean vector; the input is <strong>accepted</strong> exactly when that vector’s <em>last</em> position is true.</p>
+
+          <h3>Example: Dyck-1</h3>
+          <p>Correctly nested <code>(</code> <code>)</code> needs two conditions: (1)&nbsp;no prefix has more closes than opens, and (2)&nbsp;the string ends balanced. Both matter—<code>())(</code> has equal totals but already closed too many in the middle. The program below writes those conditions with prefix counts, comparisons, and <code>&amp;&amp;</code>. Step through it on <code>( )</code>.</p>
+
+          <div class="lab">
+            <div class="lab-head">
+              <strong>The C-RASP program · running on <code>( )</code></strong>
+              <span class="badge">Guided example</span>
+            </div>
+            <div class="lab-body">
+              <p class="small" style="margin-top:0">This box <em>is</em> the program. The highlighted line is the one introduced in the current step.</p>
+              <pre id="walk-program" class="program-block" aria-label="C-RASP program for Dyck-1"></pre>
+
+              <p id="walk-caption" class="interaction-guide" aria-live="polite"></p>
+
+              <div class="table-scroll">
+                <table id="walk-table" class="trace walk-trace">
+                  <caption class="small">Each row is the vector produced by one program line</caption>
+                </table>
+              </div>
+
+              <div class="controls walk-controls">
+                <button id="walk-prev" class="secondary" type="button">← Back</button>
+                <span id="walk-step-label" class="small"></span>
+                <button id="walk-next" type="button">Next →</button>
+                <button id="walk-reset" class="secondary" type="button">Reset</button>
+              </div>
+              <p id="walk-verdict" class="result" aria-live="polite"></p>
+            </div>
+          </div>
+
+          <div class="chapter-nav">
+            <button type="button" class="next-chapter" data-next="playground">Next: Try it yourself →</button>
+          </div>
+        </div>
+      </details>
+
+      <details id="playground" class="chapter">
+        <summary class="chapter-summary">
+          <span class="section-number">03 / Try it yourself</span>
+          <span class="chapter-title">Run the interpreter</span>
+          <span class="chapter-marker" aria-hidden="true"></span>
+        </summary>
+        <div class="chapter-body">
+          <p>Pick an example, set the input, then Run. The program view highlights the active line and names the <strong>C-RASP command</strong> it uses. Edit only if you want—use the pencil.</p>
+
+          <div class="lab">
+            <div class="lab-head">
+              <strong>C-RASP notebook</strong>
+              <span class="badge">Executable program · Python interpreter</span>
+            </div>
+            <div class="lab-body">
+              <div class="controls">
+                <label>Example
+                  <select id="example">
+                    <option value="dyck">Balanced parentheses (Dyck-1)</option>
+                    <option value="anbn">aᵏbᵏ</option>
+                    <option value="previous">Contains adjacent ab</option>
+                  </select>
+                </label>
+                <div class="tokens-field">
+                  <span class="small">Input tokens</span>
+                  <div class="tokens-field-row">
+                    <input id="tokens" type="text" value="( ) ( ( ) )" spellcheck="false" aria-describedby="token-help" readonly>
+                    <button id="edit-tokens" class="inline-edit" type="button" title="Edit input tokens" aria-label="Edit input tokens" aria-pressed="false">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                    </button>
+                    <button id="done-edit-tokens" class="inline-edit inline-edit-done" type="button" hidden title="Done editing tokens">Done</button>
+                  </div>
+                </div>
+              </div>
+              <p id="token-help" class="small">Whitespace-separated tokens (parentheses may be typed without spaces). 1–128 tokens.</p>
+
+              <div class="program-panel">
+                <div class="program-panel-head">
+                  <span class="small">Program</span>
+                  <div class="program-panel-actions program-actions-run">
+                    <button id="run" class="icon-btn icon-btn-primary" type="button" title="Run program" aria-label="Run program" data-mode="play">
+                      <svg class="icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                      <svg class="icon-stop" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                    </button>
+                    <button id="reset" class="secondary icon-btn" type="button" title="Restore example" aria-label="Restore example">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                    </button>
+                    <button id="copy-program" class="secondary icon-btn" type="button" title="Copy program" aria-label="Copy program">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                  </div>
+                  <div class="program-panel-actions program-actions-builder" hidden>
+                    <button id="builder-back" class="secondary icon-btn" type="button" title="Undo" aria-label="Undo">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                    </button>
+                    <button id="builder-forth" class="secondary icon-btn" type="button" title="Redo" aria-label="Redo">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </button>
+                    <button id="builder-restore" class="secondary icon-btn" type="button" title="Restore initial program" aria-label="Restore initial program">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                    </button>
+                    <button id="commit-program" class="icon-btn icon-btn-primary" type="button" title="Commit program">Commit</button>
+                  </div>
+                </div>
+                <div class="program-view">
+                  <pre id="exec-program" class="program-block exec-program" aria-label="Program with active line highlighted"></pre>
+                  <button id="edit-program" class="inline-edit" type="button" aria-pressed="false" title="Edit program" aria-label="Edit program">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                  </button>
+                </div>
+                <div id="program-builder" class="program-builder" hidden>
+                  <p class="builder-hint">Three columns: pick a <strong>command</strong>, build <strong>your program</strong>, watch the <strong>view</strong> update as text. Drag left → middle (or click a command to append). Use ← → to undo/redo, restore for the initial program, then <strong>Commit</strong> to check it is well-formed and leave the builder.</p>
+                  <div class="builder-layout">
+                    <div class="builder-palette" aria-label="C-RASP commands">
+                      <div class="builder-col-title">Commands</div>
+                      <p class="builder-palette-note">Drag into Your program →</p>
+                      <button type="button" class="palette-block" draggable="true" data-block="count_token">Count token<br><code># "…"</code></button>
+                      <button type="button" class="palette-block" draggable="true" data-block="count_pred">Count predicate<br><code># P</code></button>
+                      <button type="button" class="palette-block" draggable="true" data-block="marker">Token marker<br><code>"…"</code></button>
+                      <button type="button" class="palette-block" draggable="true" data-block="compare">Compare<br><code>C₁ ? C₂</code></button>
+                      <button type="button" class="palette-block" draggable="true" data-block="and">And<br><code>P &amp;&amp; Q</code></button>
+                      <button type="button" class="palette-block" draggable="true" data-block="or">Or<br><code>P || Q</code></button>
+                      <button type="button" class="palette-block" draggable="true" data-block="not">Not<br><code>! P</code></button>
+                      <p class="builder-palette-more small">Also in C-RASP (Advanced text): <code>+</code> <code>-</code> <code>min</code>/<code>max</code>, if–then–else.</p>
+                    </div>
+                    <div class="builder-arrow" aria-hidden="true">
+                      <span class="builder-arrow-label">drag</span>
+                      <span class="builder-arrow-glyph">→</span>
+                    </div>
+                    <div id="builder-canvas" class="builder-canvas" aria-label="Program lines">
+                      <div class="builder-col-title">Your program</div>
+                      <div id="builder-empty" class="builder-empty">Drop commands here</div>
+                      <div id="builder-lines" class="builder-lines"></div>
+                    </div>
+                    <div class="builder-source-panel" aria-label="Program text view">
+                      <div class="builder-source-head">
+                        <span class="builder-col-title">View</span>
+                        <span id="builder-commit-status" class="builder-commit-status" role="status" aria-live="polite"></span>
+                      </div>
+                      <pre id="builder-source" class="builder-source" aria-live="polite"></pre>
+                    </div>
+                  </div>
+                  <p class="small builder-commit-help">Commit checks syntax and that the interpreter can evaluate the program on the current input (last line must be Boolean).</p>
+                  <details class="builder-advanced">
+                    <summary>Advanced: edit as text</summary>
+                    <textarea id="program" spellcheck="false" aria-describedby="engine-note">C_open = # "("
+C_close = # ")"
+V = C_open &lt; C_close
+CV = # V
+M = (CV == 0)
+B = (C_open == C_close)
+D = M &amp;&amp; B</textarea>
+                  </details>
+                </div>
+              </div>
+              <p id="engine-note" class="small">Pinned <a href="https://github.com/coli-saar/c-rasp/tree/c-star-rasp">coli-saar/c-rasp</a> interpreter · positions start at 0</p>
+              <p id="engine-status" class="status" role="status" aria-live="polite"></p>
+
+              <div class="trace-head">
+                <div class="trace-toolbar" role="group" aria-label="Trace playback">
+                  <button id="replay-trace" class="secondary icon-btn" type="button" title="Replay" aria-label="Replay">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                  </button>
+                  <button id="prev-row" class="secondary icon-btn" type="button" title="Previous" aria-label="Previous assignment">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                  </button>
+                  <span id="row-label" class="trace-step small"></span>
+                  <button id="next-row" class="secondary icon-btn" type="button" title="Next" aria-label="Next assignment">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                  <button id="skip-trace" class="secondary icon-btn" type="button" title="Skip to end" aria-label="Skip to end">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                  </button>
+                  <button id="download-trace" class="secondary icon-btn" type="button" title="Download trace" aria-label="Download trace" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  </button>
+                </div>
+                <span id="result" class="result"></span>
+              </div>
+
+              <div id="trace-panel" class="trace-panel">
+                <div id="trace-empty" class="trace-empty" data-mode="idle">
+                  Nothing has run yet. Press play to fill this area with the execution trace.
+                </div>
+                <p id="command-link" class="interaction-guide" aria-live="polite" hidden></p>
+                <div id="trace-scroll" class="table-scroll" hidden>
+                  <table id="trace" class="trace walk-trace"></table>
+                </div>
+                <p id="acceptance-note" class="small"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chapter-nav">
+            <button type="button" class="next-chapter" data-next="related">Next: Related work →</button>
+          </div>
+        </div>
+      </details>
+
+      <details id="related" class="chapter">
+        <summary class="chapter-summary">
+          <span class="section-number">04 / Related work</span>
+          <span class="chapter-title">Papers if you want to dig in</span>
+          <span class="chapter-marker" aria-hidden="true"></span>
+        </summary>
+        <div class="chapter-body">
+          <p>These are the main references behind this page. Start with Yang &amp; Chiang for C-RASP itself; Huang et al. for the length-generalization framework and experiments; Yang et al. (2026) for length-complexity bounds.</p>
+          <ol class="refs">
+            <li>Andy Yang and David Chiang (2024). <a href="https://arxiv.org/abs/2404.04393">Counting Like Transformers: Compiling Temporal Counting Logic Into Softmax Transformers.</a> COLM. Introduces C-RASP and compilation into soft-attention transformers.</li>
+            <li>Xinting Huang et al. (2025). <a href="https://arxiv.org/abs/2410.02140">A Formal Framework for Understanding Length Generalization in Transformers.</a> ICLR. Representability, idealized identification, and empirical length-generalization results.</li>
+            <li>Andy Yang, Pascal Bergsträßer, Georg Zetzsche, David Chiang, and Anthony W. Lin (2026). <a href="https://arxiv.org/abs/2603.02238">Length Generalization Bounds for Transformers.</a> Computability of length bounds for C-RASP and the positive fragment C-RASP₊.</li>
+            <li>Hattie Zhou et al. (2024). <a href="https://arxiv.org/abs/2310.16028">What Algorithms Can Transformers Learn? A Study in Length Generalization.</a> ICLR. Empirical motivation and the RASP-L conjecture.</li>
+          </ol>
+          <p class="small">Interpreter: <a href="https://github.com/coli-saar/c-rasp/tree/c-star-rasp">coli-saar/c-rasp</a> (ordinary C-RASP evaluation; this page does not train models).</p>
+        </div>
+      </details>
+    </article>
+  </div>
+</main>
+<footer>
+  <span>C-RASP and length generalization · Working edition</span>
+  <span><a href="https://github.com/coli-saar/c-rasp/tree/c-star-rasp">Interpreter source</a> · <a href="#related" data-open-section="related">Related work</a></span>
+</footer>
+</body>
+</html>

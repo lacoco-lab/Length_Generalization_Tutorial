@@ -96,3 +96,25 @@ This checks 443 traces, including deterministic random programs and every nonemp
 ## Version 2 (separate remote contribution)
 
 The GitHub update adds `site/version2/`, with a chapter-based tutorial and drag-and-drop program editor. It remains self-contained and is linked from the main page header and footer. It does not replace the integrated main draft. See `site/version2/README.md` for its instructions.
+
+
+## Typst/Tola manuscript (PDF and HTML)
+
+The alternative authoring setup is in [`tutorial_dual/`](tutorial_dual/README.md).
+Edit [`tutorial_dual/manuscript.typ`](tutorial_dual/manuscript.typ) for the shared
+article text; [`draft_2.typ`](draft_2.typ) is the PDF entry point. The original
+[`draft_1.typ`](draft_1.typ) is retained as an independent snapshot.
+
+With Typst 0.15.1 and Tola 0.8.1 on PATH:
+
+```sh
+./build_tutorial.sh both
+./build_tutorial.sh check
+./build_tutorial.sh preview
+node --test tutorial_dual/tests/*.test.mjs
+```
+
+The build writes `draft_2.pdf` and `tutorial_dual/public/`; these generated outputs
+are not tracked. The existing `site/` tutorial and its Pages deployment remain
+unchanged. The Tola version embeds a local copy of the existing notebook after the
+Dyck-1 example and uses expandable explanations in HTML and fully visible text in PDF.

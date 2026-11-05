@@ -1,0 +1,35 @@
+# Tola configuration (v0.8.1)
+# https://github.com/tola-rs/tola-ssg
+
+# tola help "[site]"
+[site]
+# origin = ""
+base-path = "/"
+title = "Length Generalization in Transformers"
+authors = []
+description = ""
+languages = []
+language = "en"
+
+# tola help "[build]"
+[build]
+entry = "site.typ"
+content-dir = "content"
+publish-dir = "public"
+
+# tola help "[build.hooks]"
+
+# tola help "[assets]"
+[assets]
+cache-busting = false
+trees = [{ source = "static/web-assets", url-prefix = "/assets" }]
+files = []
+
+# tola help "[vendor]"
+[vendor]
+path = "vendor"
+
+
+# Preserve upstream ES modules verbatim (some use top-level await).
+[build.minify]
+javascript = false

@@ -1,0 +1,92 @@
+{
+  "tokens": [
+    "(",
+    ")",
+    "(",
+    "(",
+    ")",
+    ")"
+  ],
+  "rows": [
+    {
+      "name": "C_open",
+      "values": [
+        1,
+        1,
+        2,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "name": "C_close",
+      "values": [
+        0,
+        1,
+        1,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "name": "V",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "name": "CV",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "M",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "B",
+      "values": [
+        false,
+        true,
+        false,
+        false,
+        false,
+        true
+      ]
+    },
+    {
+      "name": "D",
+      "values": [
+        false,
+        true,
+        false,
+        false,
+        false,
+        true
+      ]
+    }
+  ],
+  "accepted": true,
+  "engine": "coli-saar/c-rasp",
+  "index_base": 0
+}

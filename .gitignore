@@ -1,0 +1,15 @@
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+test-results/
+playwright-report/
+
+# Typst/Tola local tools and generated exports
+.tools/
+tmp/
+/draft_2.pdf
+
+# Local historical copies; never part of the current build
+/archive/

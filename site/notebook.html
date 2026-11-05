@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Five ways to explore C-RASP</title>
+    <link rel="stylesheet" href="assets/style.css?v=20261020-layout3" />
+    <link rel="stylesheet" href="assets/notebook.css?v=20261020-layout3" />
+    <script type="module" src="assets/notebook.js?v=20261020-layout3"></script>
+  </head>
+  <body class="notebook-page">
+    <a class="skip" href="#experiment">Skip to notebook</a>
+    <header>
+      <a class="brand" href="index.html">C-RASP / LENGTH GENERALIZATION</a
+      ><a href="index.html#playground">Back to the tutorial</a>
+    </header>
+    <main class="notebook-shell">
+      <div class="notebook-intro">
+        <p class="eyebrow">Notebook experiments · Five interaction designs</p>
+        <h1>See a program take shape.</h1>
+        <p>
+          You do not need to know the syntax. A C-RASP program assigns a value to every token
+          position. Some values are numbers; others are yes/no answers. Try five ways of working
+          with those values below.
+        </p>
+        <p class="small">
+          Start with the walkthrough, or try the block builder to construct a program. These are
+          alternative notebook designs for comparison, not five required lessons.
+        </p>
+      </div>
+      <nav id="mode-nav" class="mode-nav" aria-label="Choose a notebook design"></nav>
+      <section id="experiment" class="experiment" aria-labelledby="mode-title">
+        <div class="experiment-heading">
+          <div>
+            <p id="mode-kicker" class="eyebrow"></p>
+            <h2 id="mode-title"></h2>
+          </div>
+          <button id="reset-design" class="secondary">Reset this design</button>
+        </div>
+        <p id="mode-description" class="mode-description"></p>
+        <div id="mode-controls"></div>
+        <div id="input-area"></div>
+        <p id="interaction-message" class="interaction-message" role="status"></p>
+        <div id="mode-workspace"></div>
+        <div id="results" aria-busy="true">
+          <div class="result-header">
+            <h3 id="result-heading">Values at each position</h3>
+            <p id="decision" class="decision" aria-live="polite"></p>
+          </div>
+          <p id="result-intro" class="small"></p>
+          <div id="values"></div>
+          <p id="inspection" class="inspection"></p>
+        </div>
+        <div class="runtime-bar">
+          <span id="runtime-status" role="status" aria-live="polite"
+            >Preparing the local evaluator…</span
+          >
+        </div>
+        <div class="code-actions">
+          <button
+            id="toggle-code"
+            class="secondary"
+            aria-expanded="false"
+            aria-controls="generated-code"
+          >
+            View generated C-RASP</button
+          ><button id="open-editor" class="secondary">Continue in text editor ↗</button>
+        </div>
+        <p class="small">
+          The code view translates your choices into syntax. You can complete every activity without
+          opening it.
+        </p>
+        <pre id="generated-code" hidden><code id="source-code"></code></pre>
+      </section>
+      <section class="design-notes">
+        <h2>What each design lets us test</h2>
+        <dl>
+          <dt>01 · Walkthrough</dt>
+          <dd>
+            Does revealing one assignment at a time make a vector computation easier to follow?
+          </dd>
+          <dt>02 · Block builder</dt>
+          <dd>
+            Can readers construct and modify well-formed programs by connecting typed operations?
+          </dd>
+          <dt>03 · Repair a rule</dt>
+          <dd>Does a small counterexample explain why comparing final counts is insufficient?</dd>
+          <dt>04 · Token sandbox</dt>
+          <dd>
+            Do immediate changes in prefix counts help connect a symbol sequence to its computation?
+          </dd>
+          <dt>05 · Predict a value</dt>
+          <dd>Can readers infer a cell before seeing it, and explain their prediction?</dd>
+        </dl>
+        <p class="small">
+          These activities evaluate structured blocks directly in your browser, without a download
+          or server-side execution. The evaluator is cross-checked against the original
+          <a href="https://github.com/coli-saar/c-rasp/tree/c-star-rasp"
+            >C-RASP Python interpreter</a
+          >
+          during development. This is a small typed subset, not all of C-RASP. It prevents malformed
+          expressions and forward references; a well-formed program can still compute the wrong
+          function. No transformer is trained here.
+        </p>
+        <p class="small">
+          Position labels start at 0. Prefix counts include the current position. The learning
+          examples use nonempty inputs of at most 16 tokens; empty-word recognition is outside these
+          activities. Yes/no values are displayed as words rather than unexplained symbols.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="An interactive introduction to C-RASP, counting with attention, and the theory of transformer length generalization."
+    />
+    <title>C-RASP and transformer length generalization</title>
+    <link rel="stylesheet" href="assets/style.css?v=20261020-layout3" />
+    <script type="module" src="assets/article.js?v=20261020-layout3"></script>
+  </head>
+  <body>
+    <a class="skip" href="#article">Skip to article</a>
+    <header>
+      <a class="brand" href="#">C-RASP / LENGTH GENERALIZATION</a>
+      <nav aria-label="Primary">
+        <a href="#playground">Try a program</a>
+        <a href="#evidence">Evidence</a>
+        <a href="#references">References</a>
+        <a href="version2/">Version 2</a>
+      </nav>
+    </header>
+    <main>
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Counting · Attention · Generalization</div>
+          <h1>C-RASP and length generalization</h1>
+          <p class="dek">
+            This tutorial describes C-RASP computations, their representation by transformers, and
+            the assumptions under which an idealized learner can identify a computation from shorter
+            inputs. Interactive examples illustrate the constructions; published experiments provide
+            a separate empirical comparison.
+          </p>
+          <p class="meta">
+            Interactive tutorial draft · C-RASP, transformer constructions, and length
+            generalization
+          </p>
+          <a class="button" href="#playground">Start with the Dyck-1 walkthrough</a>
+        </div>
+        <div
+          class="hero-art"
+          aria-label="The prefix balance of the parenthesis sequence open close open open close close"
+        >
+          <div class="figure-label"><span>Example: prefix balance</span><span>Dyck-1</span></div>
+          <svg viewBox="0 0 440 260" role="img" aria-labelledby="hero-title">
+            <title id="hero-title">Prefix balance for ()(()) is 1, 0, 1, 2, 1, 0</title>
+            <g stroke="#d8ded8" stroke-width="1"><path d="M35 65H415M35 125H415M35 185H415" /></g>
+            <path
+              d="M45 125L115 185L185 125L255 65L325 125L395 185"
+              fill="none"
+              stroke="#246d66"
+              stroke-width="3"
+            />
+            <g fill="#246d66">
+              <circle cx="45" cy="125" r="5" />
+              <circle cx="115" cy="185" r="5" />
+              <circle cx="185" cy="125" r="5" />
+              <circle cx="255" cy="65" r="5" />
+              <circle cx="325" cy="125" r="5" />
+              <circle cx="395" cy="185" r="5" />
+            </g>
+            <g font-family="Georgia,serif" font-size="28" fill="#172f39" text-anchor="middle">
+              <text x="45" y="230">(</text>
+              <text x="115" y="230">)</text>
+              <text x="185" y="230">(</text>
+              <text x="255" y="230">(</text>
+              <text x="325" y="230">)</text>
+              <text x="395" y="230">)</text>
+            </g>
+            <g font-family="system-ui,sans-serif" font-size="12" fill="#52646c">
+              <text x="12" y="70">2</text>
+              <text x="12" y="130">1</text>
+              <text x="12" y="190">0</text>
+              <text x="45" y="30">open brackets − closed brackets</text>
+            </g>
+          </svg>
+          <div class="figure-label">
+            <span>No negative prefix</span><span>Final balance = 0 ✓</span>
+          </div>
+        </div>
+      </div>
+      <div class="layout">
+        <aside class="toc" aria-label="On this page">
+          <strong>In this tutorial</strong><a href="#question">01 / The question</a
+          ><a href="#playground">02 / Dyck-1 walkthrough</a
+          ><a href="#builder">03 / Block playground</a>
+          <a href="#attention">04 / Counting with attention</a
+          ><a href="#positions">05 / When positions matter</a
+          ><a href="#learning">06 / From programs to learning</a
+          ><a href="#evidence">07 / What experiments show</a
+          ><a href="#limits">08 / What remains open</a
+          ><a href="#references">References & notation</a>
+        </aside>
+        <article id="article">
+          <noscript
+            ><p class="noscript">
+              The article and published figures are readable without JavaScript. Enable it to use
+              the walkthrough, block playground, and interactive explanations.
+            </p></noscript
+          >
+          <!-- 01 — Representability, learning, and generalization -->
+          <section id="question">
+            <div class="section-number">01 / The question</div>
+            <h2>Three questions about length generalization</h2>
+            <p class="lede">
+              A transformer trained to recognize balanced parentheses on short strings may be
+              evaluated on longer strings. Understanding this setting requires separating what the
+              model can represent, what training identifies, and where the resulting computation
+              remains correct.
+            </p>
+            <p>
+              One possibility is that it has discovered a computation whose instructions do not
+              depend on input length. C-RASP makes such computations explicit: a fixed sequence of
+              operations acts on a vector with one entry per input token. Longer inputs produce
+              longer vectors, not longer programs.
+            </p>
+            <div class="three">
+              <div>
+                <h3>Representability</h3>
+                <p>Does a transformer exist that computes the target?</p>
+              </div>
+              <div>
+                <h3>Learning</h3>
+                <p>Does training find a solution on the observed inputs?</p>
+              </div>
+              <div>
+                <h3>Length generalization</h3>
+                <p>Does that solution also work beyond the training lengths?</p>
+              </div>
+            </div>
+            <p>
+              These are different questions. A construction answers the first; it does not, on its
+              own, answer the other two. The following sections discuss these questions separately.
+            </p>
+          </section>
+
+          <!-- 02 — Learn C-RASP through a Dyck-1 walkthrough -->
+          <section id="playground">
+            <div class="section-number">02 / A worked example</div>
+            <h2>Recognizing balanced parentheses with C-RASP</h2>
+            <p>
+              The language Dyck-1 consists of correctly balanced strings using one kind of
+              parenthesis. For a nonempty input, two conditions characterize membership: no prefix
+              contains more closing than opening parentheses, and the complete input has equally
+              many of each. The first condition checks the order; the second checks that every
+              opening parenthesis is eventually closed.
+            </p>
+            <p>
+              For example, <code>()(())</code> satisfies both conditions. The string
+              <code>())(()</code> has the same final counts, but its prefix <code>())</code> already
+              contains too many closes. A test that only compares the totals would miss this
+              violation.
+            </p>
+            <h3>From a sequence to vectors</h3>
+            <p>
+              A C-RASP assignment produces a vector with one entry per token position. A Boolean
+              vector records a yes/no answer at each position; a number vector records an integer.
+              Operations combine entries at the same position, or count how often a Boolean
+              predicate is true in the prefix. A prefix includes the current position.
+            </p>
+            <p>
+              The walkthrough starts with <code>Opens</code>, the number of opening parentheses seen
+              so far. Its values on <code>()(())</code> are <code>1, 1, 2, 3, 3, 3</code>. The
+              program then constructs the closing counts, detects invalid prefixes, and combines the
+              two acceptance conditions. All seven assignments apply at every input length.
+            </p>
+            <p>
+              <strong>Follow the computation.</strong> Select <em>Add next assignment</em> to reveal
+              one row at a time. Each column corresponds to an input position. Select a token or
+              value to inspect the prefix used there. After reaching the final row, switch to the
+              counterexample and look for the first violation. Rows are revealed gradually only in
+              this walkthrough; the complete generated code is available below it.
+            </p>
+            <iframe
+              class="notebook-frame"
+              style="display: block; width: 100%; border: 0; min-width: 0"
+              id="dyck-notebook"
+              src="notebook.html?embed=walk&amp;v=20261020-layout3"
+              title="Dyck-1 walkthrough: prefix counts and acceptance"
+              height="1000"
+            ></iframe>
+            <p class="small">
+              <a href="notebook.html?embed=walk" target="_blank" rel="noopener"
+                >Open the walkthrough in its own tab</a
+              >. Position labels in the activities start at 0. They use nonempty inputs; this choice
+              is a scope limit of the interface, not a claim that Dyck-1 excludes the empty word.
+            </p>
+            <h3>Why the final check works</h3>
+            <p>
+              <code>Violation</code> is true wherever <code>Opens &lt; Closes</code>. Counting those
+              positions produces <code>Violations</code>; checking that it is zero gives
+              <code>Safe</code>. This retains the history of an invalid prefix even if later tokens
+              make the totals equal. Separately, <code>Balanced</code> compares the two counts at
+              the current position. The final assignment is <code>Safe AND Balanced</code>.
+            </p>
+            <p>
+              At the last position, these checks express exactly the two conditions above. The
+              argument does not depend on a maximum input length. This establishes what the program
+              computes; it does not establish that training a transformer will discover it.
+            </p>
+          </section>
+          <!-- 03 — General exploration with typed C-RASP blocks -->
+          <section id="builder">
+            <div class="section-number">03 / Construct a program</div>
+            <h2>Experiment with C-RASP operations</h2>
+            <p>
+              The same operations can express tasks other than parenthesis recognition. In the
+              playground below, the initial program asks whether an input contains an
+              <code>a</code>. The first block marks positions containing <code>a</code>; the second
+              counts those marks; the third checks whether the count is greater than zero. The
+              decision is read at the last token.
+            </p>
+            <p>
+              <strong>Build without writing syntax.</strong> Click or drag an operation from the
+              palette to add a block. Choose its inputs from the menus and read the resulting vector
+              directly beneath it. Only earlier variables of a compatible type are offered. A count
+              consumes yes/no values and produces numbers; a comparison consumes numbers and
+              produces yes/no values. Values update immediately when you edit the program or input.
+            </p>
+            <p>
+              Start by changing the token test from <code>a</code> to <code>b</code>. Then try the
+              starter that requires both symbols: which extra checks are needed? Finally, compare it
+              with the starter asking whether an <code>a</code> occurs before a <code>b</code>. Test
+              <code>a b</code> and <code>b a</code>. Both have the same totals, but prefix
+              information distinguishes their order. This starter does not require adjacency.
+            </p>
+            <iframe
+              class="notebook-frame"
+              style="display: block; width: 100%; border: 0; min-width: 0"
+              id="block-notebook"
+              src="notebook.html?embed=build&amp;v=20261020-layout3"
+              title="C-RASP block playground with live variable values"
+              height="1500"
+            ></iframe>
+            <p class="small">
+              <a href="notebook.html?embed=build" target="_blank" rel="noopener"
+                >Open the block playground in its own tab</a
+              >. The interface provides a subset of C-RASP: token tests, prefix counts, comparisons,
+              Boolean combinations, and addition. Its limits of 24 blocks and 16 tokens are
+              interface limits, not bounds on the language. The
+              <a href="text-editor.html">text editor</a> offers the syntax supported by the original
+              Python implementation.
+            </p>
+            <h3>What a well-formed program tells us</h3>
+            <p>
+              The block editor prevents syntax errors, incompatible inputs, and references to
+              variables that have not yet been defined. These checks do not ensure that a program
+              solves the intended task. A program that only checks equal totals is well-formed, but
+              it does not recognize Dyck-1. Changing inputs and inspecting vectors helps find
+              counterexamples; a correctness argument is still needed for all lengths.
+            </p>
+            <p>
+              Full C-RASP also includes operations such as subtraction, min/max, and conditional
+              selection. The important feature for this tutorial is that a fixed finite program
+              specifies a sequence of vector operations independently of input length. The next
+              section explains how transformer layers can represent such operations.
+            </p>
+          </section>
+          <!-- 04 — Uniform-attention illustration -->
+          <section id="attention">
+            <div class="section-number">04 / Counting with attention</div>
+            <h2>Representing counts with uniform attention</h2>
+            <span class="badge">Construction intuition</span>
+            <p>
+              The walkthrough used exact integer counts. To connect this to a transformer
+              construction, consider a head whose attention scores are zero at every visible
+              position. Softmax then assigns equal weight to every position. If the values encode a
+              Boolean predicate, the result is its frequency in the prefix.
+            </p>
+            <div class="equation">
+              Attention(P)<sub>i</sub> = C(i) / (i + 1)<small
+                >With a BOS token and i ordinary input tokens; P is false at BOS.</small
+              >
+            </div>
+            <p>
+              Counts at the same position share a positive denominator, so their ordering is
+              preserved. A BOS-only indicator has sum 1: averaging it supplies
+              <strong>1/(i + 1)</strong>, the encoded integer constant 1.
+            </p>
+            <p>
+              <strong>Reading the attention illustration.</strong> The sequence is fixed to
+              <code>()(())</code>. Move the slider to change the number of ordinary tokens visible
+              to attention. The marked prefix also includes BOS, so each visible position receives
+              weight 1/(i + 1). The two fractions show the normalized opening-parenthesis count and
+              the normalized constant 1. This illustrates the arithmetic of the construction; it is
+              not attention measured in a trained model.
+            </p>
+            <div class="lab">
+              <div class="lab-head">
+                <strong>Inspect a uniform-attention prefix</strong
+                ><span class="badge">Exact arithmetic illustration</span>
+              </div>
+              <div class="lab-body">
+                <label for="prefix"
+                  >Ordinary tokens visible: <output id="prefix-label">4</output></label
+                ><input class="slider" id="prefix" type="range" min="1" max="6" value="4" />
+                <p class="small">
+                  Each box shows its value for “is an opening parenthesis” and its attention weight.
+                  Muted boxes are outside the visible prefix.
+                </p>
+                <div id="attention-tokens" class="token-strip"></div>
+                <div id="attention-equation" class="equation" aria-live="polite"></div>
+                <p id="attention-explanation" class="interaction-guide"></p>
+                <p class="small">
+                  BOS contributes zero to the opening-parenthesis count and one to the constant
+                  indicator. Tokens outside the prefix receive no weight.
+                </p>
+              </div>
+            </div>
+            <div class="explanation">
+              <h3>Precision and LayerNorm</h3>
+              <p>
+                Adjacent normalized counts differ by 1/(i + 1). Resolving them through length n
+                motivates O(log n) fractional precision for these values. This is a resolution
+                argument, not a proof that rounding every intermediate activation preserves a
+                complete simulation.
+              </p>
+              <p>
+                Yang and Chiang account for LayerNorm using paired coordinates with opposite signs
+                and additional comparison machinery. The full construction is more than simply
+                applying an unscaled comparison to an attention output.
+              </p>
+              <p>
+                <a href="https://arxiv.org/html/2404.04393v2#S5"
+                  >Construction: §5 and Appendix B.</a
+                >
+              </p>
+            </div>
+          </section>
+          <!-- 05 — Positional relations -->
+          <section id="positions">
+            <div class="section-number">05 / When positions matter</div>
+            <h2>Positional information and its restrictions</h2>
+            <p>
+              C-RASP[Φ, Ψ] adds unary predicates on positions and binary relations that restrict
+              counting. Throughout this article, <strong>C-RASP[Pos]</strong> abbreviates the
+              paper’s C-RASP[periodic, local]: periodic unary predicates, and translation-invariant
+              local binary relations. Unrestricted prefix counting remains available separately.
+            </p>
+            <div class="three">
+              <div>
+                <h3>Periodic</h3>
+                <p>
+                  A pattern repeats after a fixed number of positions. An infinite sequence can have
+                  a finite description.
+                </p>
+              </div>
+              <div>
+                <h3>Translation-invariant</h3>
+                <p>Shifting both positions equally does not change their relation.</p>
+              </div>
+              <div>
+                <h3>Local</h3>
+                <p>The additional positional relation is false beyond a fixed distance.</p>
+              </div>
+            </div>
+            <p>
+              <strong>Comparing positional relations.</strong> The boxes represent positions 0
+              through 11. The arrow marks the query position i; highlighted boxes are keys j
+              selected by the chosen relation within the causal prefix j ≤ i. Change the query
+              position to see how the selected keys move. The preceding-token relation satisfies
+              both restrictions. The other options illustrate what fails when locality or
+              translation invariance is removed; they are not all allowed relations in C-RASP[Pos].
+            </p>
+            <div class="lab">
+              <div class="lab-head">
+                <strong>Which positions are selected?</strong
+                ><span class="badge">Positional predicate</span>
+              </div>
+              <div class="lab-body">
+                <div class="controls">
+                  <label
+                    >Relation<select id="relation">
+                      <option value="previous">Immediately preceding token</option>
+                      <option value="even">Even distance from query</option>
+                      <option value="absolute">Absolute position 0</option>
+                    </select></label
+                  ><label
+                    >Query position <output id="query-label">5</output
+                    ><input id="query" class="slider" type="range" min="0" max="11" value="5"
+                  /></label>
+                </div>
+                <p class="small">
+                  Query = the position doing the counting. Selected = a position that contributes if
+                  its token predicate is true. Masked = a later position excluded by causal
+                  attention.
+                </p>
+                <div id="position-tokens" class="token-strip"></div>
+                <p id="position-selection" class="interaction-guide" aria-live="polite"></p>
+                <p id="relation-description"></p>
+              </div>
+            </div>
+            <p>
+              A preceding-token relation is both local and translation-invariant. Even distance is
+              translation-invariant but not local. These restrictions concern the additional
+              positional interaction; content-based attention can still aggregate over an entire
+              prefix.
+            </p>
+            <div class="explanation">
+              <h3>Where limit transformers enter</h3>
+              <p>
+                Learned absolute positional embeddings occupy a finite table. To analyze growing
+                context lengths, Huang et al. introduce limit transformers: fixed-width mathematical
+                models defined at arbitrary lengths, with positional vectors and additional
+                positional attention functions.
+              </p>
+              <p>
+                For the theorem, the vectors are periodic and the additional functions are
+                translation-invariant and local. Every C-RASP[Pos] program can be compiled into a
+                limit transformer with these properties. The converse expressive equivalence is not
+                established.
+              </p>
+            </div>
+          </section>
+          <!-- 06 — Idealized inference and theorem assumptions -->
+          <section id="learning">
+            <div class="section-number">06 / From programs to learning</div>
+            <h2>Identification under an idealized inference procedure</h2>
+            <span class="badge">Theorem · Idealized inference</span>
+            <p>
+              For context length n, imagine choosing a transformer that matches the target on
+              <em>every</em> input of length at most n/2, at every valid offset. Among admissible
+              exact fits U<sub>n</sub>, choose one with nearly the smallest complexity regularizer:
+            </p>
+            <div class="equation">ℛ(T<sub>n</sub>) ≤ inf<sub>T ∈ Uₙ</sub> ℛ(T) + 1/n</div>
+            <p>
+              An exact minimum need not be attained. The vanishing allowance makes the selection
+              rule well-defined whenever suitable fits exist. The hypothesis class also restricts
+              positional parameter products to be offset-independent; regularization alone does not
+              impose that condition.
+            </p>
+            <div class="callout">
+              <strong>The main equivalence</strong>
+              <p>
+                Under the paper’s assumptions, representability by a periodic, local limit
+                transformer is equivalent to eventual length generalization with uniformly bounded
+                regularizer values for any sequence selected by its inference procedure. Both
+                bounded complexity and eventual generalization matter.
+              </p>
+            </div>
+            <p>
+              Intuitively, bounded complexity leaves finitely many underlying candidate algorithms.
+              Every candidate that disagrees with the target has a finite counterexample. Increasing
+              the training length eventually exposes those counterexamples.
+            </p>
+            <div class="explanation">
+              <h3>Read the assumptions before applying the theorem</h3>
+              <p>
+                This is not a guarantee for SGD on sampled training data. The learner fits all
+                shorter inputs, approximately minimizes a specific regularizer, and operates in a
+                restricted hypothesis class. The paper’s model uses length-scaled attention,
+                specified rounding of logits and exponentials, and ReLU/Heaviside activations. Its
+                initial analysis allows infinite-precision activations.
+              </p>
+              <p>
+                “Matching” is defined for the paper’s output functions, not merely equal accuracy on
+                a finite test set. A Boolean recognition formulation requires a compatible output
+                encoding. The theorem is about identified computations, not convergence of learned
+                matrices to unique weights.
+              </p>
+              <p>
+                <a href="https://arxiv.org/html/2410.02140v2#S3"
+                  >Huang et al. (2025), Definitions 4–6 and Theorem 7.</a
+                >
+              </p>
+            </div>
+          </section>
+          <!-- 07 — Published figures and saved evaluation gallery -->
+          <section id="evidence">
+            <div class="section-number">07 / What experiments show</div>
+            <h2>Empirical length-generalization results</h2>
+            <p>
+              Expressibility is a theoretical property. Generalization accuracy is an observation
+              about a particular training setup. The figures below reproduce results reported by
+              Huang et al. (2025). The separate gallery supports inspection of additional saved
+              evaluations.
+            </p>
+            <p>
+              <strong>Reading the published plots.</strong> Each panel compares accuracy across
+              three length bins. Use the buttons to switch between the overview and the version
+              labeling individual regular languages; click the figure to view it at full size. Solid
+              and dotted lines distinguish positional-embedding settings. The caption below explains
+              the training and model-selection ranges and the meaning of the colors.
+            </p>
+            <div class="figure-tabs" role="group" aria-label="Published figure">
+              <button data-figure="main">Main comparison</button
+              ><button data-figure="languages" class="secondary">Named languages</button>
+            </div>
+            <figure style="margin: 0">
+              <a id="figure-link" href="assets/paper-main.svg" target="_blank" rel="noopener"
+                ><img
+                  id="paper-figure"
+                  class="wide-image"
+                  src="assets/paper-main.svg"
+                  alt="Huang et al. Figure 1: accuracy in three length bins, comparing APE and NoPE transformers across algorithmic tasks and formal languages."
+                  loading="lazy"
+              /></a>
+              <figcaption id="paper-caption" class="caption">
+                Huang et al. (2025), Figure 1. Published experiment results; not new runs. Open the
+                image for full detail.
+              </figcaption>
+            </figure>
+            <p class="caption">
+              Source:
+              <a href="https://arxiv.org/html/2410.02140v2#S5.F1"
+                >A Formal Framework for Understanding Length Generalization in Transformers</a
+              >, arXiv v2, CC BY 4.0. Original SVGs, unchanged. Training lengths are ≤50;
+              hyperparameters were selected using performance through 100, so [101,150] is the later
+              generalization evaluation. Green indicates a program was found; red includes both
+              proved nonexpressibility and cases where no program was found. Accuracy requires all
+              predicted positions in an example to be correct. These plots do not prove
+              learnability.
+            </p>
+            <h3>Additional saved evaluations</h3>
+            <p>
+              To inspect a run, import a JSON file and select it from the run menu. The plot shows
+              whole-sequence accuracy against input length, with the training range shaded and, when
+              recorded, the model-selection range marked separately. The table gives the underlying
+              correct and total counts. Each curve corresponds to one checkpoint and seed;
+              connecting lines do not represent additional measurements. No additional runs are
+              included in this edition.
+            </p>
+            <p class="small">
+              Import a JSON file matching the
+              <a href="data/evaluation-schema.json">evaluation schema</a>. Files are read locally in
+              your browser. No training or evaluation jobs are started. Each curve represents one
+              run and its recorded checkpoint.
+            </p>
+            <div class="controls">
+              <label
+                >Saved evaluations<input
+                  id="evaluation-file"
+                  type="file"
+                  accept="application/json,.json"
+                  class="file-input" /></label
+              ><label
+                >Run<select id="run-select" disabled>
+                  <option>No saved runs supplied</option>
+                </select></label
+              ><button id="export-data" class="secondary" disabled>Download evaluations</button>
+            </div>
+            <p id="evaluation-status" class="status" role="status"></p>
+            <div id="evaluation-empty" class="empty">
+              No local experiment results supplied yet.<br />Missing evaluations are unavailable—not
+              zero accuracy.
+            </div>
+            <div id="evaluation-view" hidden>
+              <svg
+                id="evaluation-plot"
+                class="plot"
+                viewBox="0 0 760 350"
+                role="img"
+                aria-label="Sequence accuracy versus input length, with training range shaded"
+              ></svg>
+              <div id="run-meta" class="run-meta"></div>
+              <div class="table-scroll"><table id="evaluation-table" class="trace"></table></div>
+            </div>
+          </section>
+          <!-- 08 — Scope and limitations -->
+          <section id="limits">
+            <div class="section-number">08 / What remains open</div>
+            <h2>Scope and limitations</h2>
+            <p>
+              C-RASP supplies concrete algorithms, a route to transformer constructions, and a
+              sufficient condition for the idealized identification theorem. It does not tell us
+              that ordinary training will discover the intended algorithm, nor that a successful
+              finite evaluation establishes correctness at all lengths.
+            </p>
+            <p>
+              There is also no general computable training-length bound in terms of description size
+              for unrestricted C-RASP—even at counting depth two. Yang et al. (2026) identify a
+              positive fragment, C-RASP₊, for which worst-case optimal exponential bounds do exist.
+              Its restricted count comparisons and the corresponding fixed-precision transformer
+              model matter to that result.
+            </p>
+            <p>
+              The examples above expose the computation specified by a program. Determining whether
+              a trained transformer implements that computation requires additional evidence beyond
+              agreement on the displayed inputs.
+            </p>
+          </section>
+          <!-- References and glossary -->
+          <section id="references">
+            <div class="section-number">Read further</div>
+            <h2>Sources & notation</h2>
+            <ol class="refs">
+              <li>
+                Andy Yang and David Chiang (2024).
+                <a href="https://arxiv.org/abs/2404.04393"
+                  >Counting Like Transformers: Compiling Temporal Counting Logic Into Softmax
+                  Transformers.</a
+                >
+                COLM.
+              </li>
+              <li>
+                Xinting Huang et al. (2025).
+                <a href="https://arxiv.org/abs/2410.02140"
+                  >A Formal Framework for Understanding Length Generalization in Transformers.</a
+                >
+                ICLR.
+              </li>
+              <li>
+                Andy Yang, Pascal Bergsträßer, Georg Zetzsche, David Chiang, and Anthony W. Lin
+                (2026).
+                <a href="https://arxiv.org/abs/2603.02238"
+                  >Length Generalization Bounds for Transformers.</a
+                >
+              </li>
+              <li>
+                Hattie Zhou et al. (2024).
+                <a href="https://arxiv.org/abs/2310.16028"
+                  >What Algorithms Can Transformers Learn? A Study in Length Generalization.</a
+                >
+                ICLR. Empirical motivation and the RASP-L conjecture.
+              </li>
+            </ol>
+            <div class="explanation">
+              <h3>Glossary</h3>
+              <dl class="glossary">
+                <dt>Predicate</dt>
+                <dd>A Boolean value at each position.</dd>
+                <dt>Prefix count</dt>
+                <dd>
+                  The number of positions satisfying a predicate, including the current position.
+                </dd>
+                <dt>BOS</dt>
+                <dd>
+                  A beginning-of-sequence token. Its indicator supplies a reference for normalized
+                  constants.
+                </dd>
+                <dt>APE / NoPE</dt>
+                <dd>Learned absolute positional embeddings / no explicit positional embeddings.</dd>
+                <dt>C-RASP[Pos]</dt>
+                <dd>
+                  This article’s abbreviation for C-RASP[periodic, local], not unrestricted
+                  positional access.
+                </dd>
+                <dt>ℛ</dt>
+                <dd>
+                  The framework’s complexity regularizer. A uniform bound is independent of context
+                  length.
+                </dd>
+              </dl>
+            </div>
+          </section>
+        </article>
+      </div>
+    </main>
+    <footer>
+      <span>C-RASP and length generalization · Working edition</span
+      ><span
+        ><a href="https://github.com/coli-saar/c-rasp/tree/c-star-rasp">Interpreter source</a> ·
+        <a href="#references">References</a> ·
+        <a href="data/figure-provenance.json">Figure provenance</a></span
+      >
+      <a href="version2/">Version 2</a>
+    </footer>
+  </body>
+</html>

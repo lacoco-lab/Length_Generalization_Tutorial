@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>C-RASP text editor</title>
+    <link rel="stylesheet" href="assets/style.css" />
+    <script type="module" src="assets/editor.js"></script>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="index.html">C-RASP / LENGTH GENERALIZATION</a
+      ><a href="index.html#builder">Back to the block playground</a>
+    </header>
+    <main style="max-width: 1000px; margin: auto; padding: 24px">
+      <section id="playground">
+        <div class="section-number">02 / A program you can run</div>
+        <h2>A C-RASP program for balanced parentheses</h2>
+
+        <p>
+          In Dyck-1, every opening parenthesis must eventually close, and no prefix may contain more
+          closes than opens. Checking only the totals would incorrectly accept
+          <code>())(</code>.
+        </p>
+        <p>
+          The program below counts opens and closes, marks invalid prefixes, and accepts only when
+          no violation has occurred and the final counts agree. The symbol
+          <code>#</code> counts inclusively through the current token.
+        </p>
+        <p>
+          <strong>Using the example.</strong> The initial table is a saved execution of the
+          displayed program on <code>()(())</code>. Each assignment produces one value per token.
+          Select an assignment name or use the arrows to highlight a row; select a count cell to
+          inspect its prefix. Edit the tokens or program and choose
+          <em>Run Python interpreter</em> to update the table. For comparison, <code>())(</code> has
+          equal final counts but is rejected because an earlier prefix contains too many closes. The
+          other examples are available in the menu.
+        </p>
+        <div class="lab">
+          <div class="lab-head">
+            <strong>C-RASP notebook</strong
+            ><span class="badge">Executable program · Python interpreter</span>
+          </div>
+          <div class="lab-body">
+            <div class="controls">
+              <label
+                >Example<select id="example">
+                  <option value="dyck">Balanced parentheses</option>
+                  <option value="anbn">aᵏbᵏ</option>
+                  <option value="previous">Contains adjacent ab</option>
+                </select></label
+              ><label
+                >Input tokens<input
+                  id="tokens"
+                  type="text"
+                  value="( ) ( ( ) )"
+                  spellcheck="false"
+                  aria-describedby="token-help"
+              /></label>
+            </div>
+            <p id="example-guide" class="interaction-guide">
+              Start with the balanced input, then compare it with an input that has the same totals
+              but an invalid prefix.
+            </p>
+            <div class="controls" aria-label="Suggested inputs">
+              <button id="try-valid" class="secondary">Load balanced input: ()(())</button
+              ><button id="try-invalid" class="secondary">Load invalid input: ())(</button>
+            </div>
+            <div class="code-grid">
+              <div>
+                <label for="program" class="small">Editable program</label
+                ><textarea id="program" spellcheck="false" aria-describedby="engine-note">
+C_open = # "("
+C_close = # ")"
+V = C_open &lt; C_close
+CV = # V
+M = (CV == 0)
+B = (C_open == C_close)
+D = M &amp;&amp; B</textarea
+                >
+              </div>
+              <div>
+                <h3>Reading the trace</h3>
+                <p>
+                  Each row in the trace is a vector. The last value of the final Boolean row
+                  determines acceptance.
+                </p>
+                <p id="token-help" class="small">
+                  Separate tokens with spaces. Parentheses can also be entered without spaces. This
+                  tool evaluates 1–128 tokens; it does not define empty-word acceptance.
+                </p>
+                <p id="engine-note" class="small">
+                  Uses the original
+                  <a href="https://github.com/coli-saar/c-rasp/tree/c-star-rasp"
+                    >coli-saar/c-rasp interpreter</a
+                  >, pinned at <code>1e821d7</code>. It evaluates programs; it does not construct or
+                  train transformer weights. Positions in this implementation start at 0.
+                </p>
+              </div>
+            </div>
+            <div class="controls">
+              <button id="run">Run program</button
+              ><button id="reset" class="secondary">Restore example</button
+              ><button id="share" class="secondary">Copy link to program</button
+              ><button id="download-trace" class="secondary">Download trace</button
+              ><button id="stop" class="secondary" hidden>Stop</button>
+            </div>
+            <p id="engine-status" class="status" role="status" aria-live="polite">
+              Showing a saved trace generated by the pinned Python interpreter. Run to evaluate
+              edits.
+            </p>
+            <h3>Execution trace</h3>
+            <p class="small">
+              Read left to right across input positions, and top to bottom through assignments. ✓
+              means true; · means false. Highlighting a row explains it below; it does not execute
+              the program again.
+            </p>
+            <div class="trace-nav">
+              <button id="prev-row" class="secondary" aria-label="Previous assignment">
+                ← Previous</button
+              ><span id="row-label" class="small"></span
+              ><button id="next-row" class="secondary" aria-label="Next assignment">Next →</button
+              ><span id="result" class="result"></span>
+            </div>
+            <p id="row-explanation" class="interaction-guide" aria-live="polite"></p>
+            <div class="table-scroll">
+              <table id="trace" class="trace">
+                <caption class="small">
+                  Interpreter values by token position
+                </caption>
+              </table>
+            </div>
+            <p id="acceptance-note" class="small"></p>
+            <p id="cell-note" class="small">
+              Select a count cell to inspect its contributing prefix.
+            </p>
+          </div>
+        </div>
+        <div class="explanation">
+          <h3>The language behind the example</h3>
+          <p>
+            C-RASP has Boolean vectors and integer-valued vectors. Assignments are evaluated in
+            order. Available operations include token predicates, Boolean operations, prefix
+            counting, comparisons, addition, subtraction, min/max, and conditional selection.
+            Equality and strict inequalities can be expressed using ≤ and Boolean operations.
+          </p>
+          <p>
+            A fixed finite program specifies the same operations at every length. The browser
+            playground uses the supplied Python implementation, including its syntax and zero-based
+            positional predicates. The theoretical examples in the paper are often indexed from 1.
+          </p>
+          <p><a href="https://arxiv.org/html/2404.04393v2#S3">Yang & Chiang (2024), §3</a></p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

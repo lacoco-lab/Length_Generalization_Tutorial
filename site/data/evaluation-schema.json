@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Saved sequence accuracy evaluations",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "runs"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "runs": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "task",
+          "model",
+          "positional_encoding",
+          "seed",
+          "checkpoint",
+          "evaluated_at",
+          "source",
+          "train_max_length",
+          "metric",
+          "points"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "task": {
+            "type": "string",
+            "minLength": 1
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "positional_encoding": {
+            "type": "string",
+            "minLength": 1
+          },
+          "checkpoint": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evaluated_at": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "train_max_length": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "selection_max_length": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "metric": {
+            "const": "sequence_accuracy"
+          },
+          "points": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10000,
+            "items": {
+              "type": "object",
+              "required": [
+                "length",
+                "correct",
+                "total"
+              ],
+              "properties": {
+                "length": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "correct": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "total": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "description": "Additional runtime constraints: unique run ids and lengths; correct <= total; selection_max_length >= train_max_length; valid evaluated_at timestamp."
+}
